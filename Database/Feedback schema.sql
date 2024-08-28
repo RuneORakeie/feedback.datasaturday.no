@@ -59,10 +59,12 @@ CREATE TABLE Feedback.Presenters (
     [Name]          nvarchar(200) NOT NULL,
     Email           varchar(300) NULL,
     Identifier      varchar(50) NULL,
+    Presenter_secret    uniqueidentifier CONSTRAINT DF_Presenters_secret DEFAULT (NEWID()) NOT NULL,
     CONSTRAINT PK_Presenters PRIMARY KEY CLUSTERED (Presenter_ID)
 );
 
 CREATE UNIQUE INDEX IX_Presenters_Identifier ON Feedback.Presenters (Identifier) WHERE (Identifier IS NOT NULL);
+CREATE UNIQUE INDEX IX_Presenters_secret ON Feedback.Presenters (Presenter_secret);
 
 --- Sessions
 -------------------------------------------------

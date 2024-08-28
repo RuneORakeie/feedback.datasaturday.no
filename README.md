@@ -19,16 +19,18 @@ The goal for this solution is to be faster, easier, and cleaner than paper.
 This web is published as:
 
 * feedback.datasatsto.se
-* eval.sqlsaturday.com
+* [eval.sqlsaturday.com](https://eval.datasaturdays.com/)
+* [eval.datasaturdays.com](https://eval.datasaturdays.com/)
 
 If you want me to add a DNS alias for you, contact me and we'll get you set up.
 
 # Workflow
 
-* The oprganizer [imports sessions](#importing-from-sessionize) and speakers from Sessionize
+* The organizer [imports sessions](#importing-from-sessionize) and speakers from Sessionize
 * The organizer distributes QR codes from the [admin page](#admin) to speakers
 * Attendees follow a QR code to the [review page](#session-id)
 * After the event, the organizer extracts a [dataset](#apireportevent-secret) with the sessions and evaluations
+* Organizers can also email secret links to each speaker where the speaker can review all the evaluations
 
 # Setting up the database and web
 
@@ -204,12 +206,19 @@ Lists **Events** that are templates. Used for the "import" feature.
 
 ### Feedback.Admin_Event_Info
 
-Lists **Presenters** for an **Event** for the admin interface.
+Lists **Presenters** and **Sessions** for an **Event** for the admin interface.
+
+### Feedback.Admin_Event_Presenters
+
+Lists unique **Presenters**, with their presenter secrets, for an **Event** for the admin interface.
 
 ### Feedback.Get_Event_Report
 
 Creates the JSON blob returned by the [event report](#apireportevent-secret).
 
+### Feedback.Get_Presenter_Report
+
+Creates the JSON blob used in the presenter report.
 
 
 
@@ -252,6 +261,11 @@ This is where the attendee ends up when they scan a QR code.
 
 Returns a PNG image with the QR code corresponding to the session id.
 
+## /presenter-report/{eventId}/{presenterSecret}
+
+Renders the presenter report.
+
+Example: `/presenter-report/123456/0000000-0000-0000-0000-000000000000`
 
 
 
@@ -268,6 +282,14 @@ Creates a response, returns a blob with all questions and answer options for the
 ## /api/get-admin-sessions (POST)
 
 Returns event information and a list of presenters for a given event.
+
+Post variables: **eventSecret**
+
+## /api/get-admin-presenters (POST)
+
+Returns a list of presenters and presenter secrets for an event.
+
+Post variables: **eventSecret**
 
 ## /api/get-templates
 

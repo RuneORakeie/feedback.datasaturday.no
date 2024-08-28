@@ -80,7 +80,6 @@
 
             if (document.location.pathname.substring(0, 7)=='/event/') {
                 // /event/000000
-                console.log('eventId='+encodeURIComponent(document.location.pathname.split('/')[2]));
                 xhr.send('eventId='+encodeURIComponent(document.location.pathname.split('/')[2]));
             } else {
                 // /sessions?responseId=0000000000
@@ -99,8 +98,187 @@
         }
 
 
+        // If we're on the admin page, show the search field:
+        //---------------------------------------------------------------------
+        if (docPath.split('/')[0]=='presenter-report') {
+            renderPresenterReport();
+        }
+
+
     }
 
+
+
+
+
+/*
+ *
+ *
+ * ----------------------------------------------------------------------------
+ * Speaker page.
+ * ----------------------------------------------------------------------------
+ * 
+ * 
+ */
+
+function renderPresenterReport() {
+    document.body.classList.add('presenter-report');
+
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('POST', '/api/presenter-report');
+    xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+    xhr.onload = function() {
+        if (xhr.status==200) {
+            const blob=JSON.parse(xhr.response);
+
+            if (blob.css) {
+                var l=document.createElement('link');
+                l.rel='stylesheet';
+                l.href=blob.css;
+                document.head.appendChild(l);
+            }
+
+            document.title='Your session feedback for '+blob.name;
+
+            // The header for this session:
+            var legend=document.createElement('div');
+            legend.classList.add('header');
+            legend.classList.add('report-legend');
+
+            var legendText=document.createElement('div');
+            legendText.innerText='Report legend';
+            legendText.classList.add('title');
+            legend.appendChild(legendText);
+
+            var legendImg=document.createElement('img');
+            legendImg.src='/report-legend.png';
+            legend.appendChild(legendImg);
+
+            document.body.appendChild(legend);
+
+            for (const session of blob.sessions) {
+
+                // The header for this session:
+                var header=document.createElement('div');
+                header.classList.add('header');
+
+                var title=document.createElement('span');
+                title.classList.add('title');
+                title.innerText=session.title;
+                header.appendChild(title);
+
+                document.body.appendChild(header);
+                var hasResponses=false;
+
+                // Loop through all of the questions
+                for (const question of blob.questions) {
+                    var div=document.createElement('div');
+                    div.classList.add('report');
+
+                    // These are all the responses (radio/checkbox/text) to this question
+                    const responseCollection=session.questions.filter(q => q.questionId==question.questionId)[0];
+
+                    // This is the number of responses
+                    if (responseCollection.sessionResponses>0 || responseCollection.textAnswers) {
+                        var qtitle=document.createElement('div');
+                        qtitle.classList.add('title');
+                        qtitle.innerText=question.text;
+                        div.appendChild(qtitle);
+                    }
+
+                    if (responseCollection.sessionResponses>0 && ['radio', 'checkbox'].indexOf(question.type)>=0) {
+
+                        hasResponses=true;
+
+                        var span=document.createElement('span');
+                        span.classList.add('response-count');
+                        span.innerText=responseCollection.sessionResponses+' response'+(responseCollection.sessionResponses>1 ? 's' : '');
+                        if (responseCollection.sessionAveragePercent!==undefined) {
+                            span.innerText+=', this session: '+responseCollection.sessionAveragePercent.toFixed(0)+'%';
+                            if (responseCollection.eventAveragePercent!==undefined) {
+                                span.innerText+=', event average: '+responseCollection.eventAveragePercent.toFixed(0)+'%';
+                            }
+                        }
+                        div.appendChild(span);
+
+                        const graphDefinition={
+                            horizontalSpacing: 0.75,
+                            xAxis: false,
+                            bars: []
+                        };
+
+                        var maxSessionResponses=responseCollection.answers.reduce((agg, curr) => (curr.sessionResponses>agg ? curr.sessionResponses : agg), 0);
+                        var maxEventResponses=responseCollection.answers.reduce((agg, curr) => (curr.eventResponses>agg ? curr.eventResponses : agg), 0);
+                        
+                        var annotations=document.createElement('div');
+                        annotations.classList.add('annotations');
+
+                        // Loop through all the response options for this question:
+                        for (option of question.options) {
+                            const response=responseCollection.answers.filter(o => o.optionId==option.optionId)[0];
+
+                            graphDefinition.bars.push({
+                                x: option.ordinal,
+                                y: response.eventResponses*maxSessionResponses/(maxEventResponses || 1)*0.75,
+                                class: (option.css || '') + ' event-average',
+                                shift: '2%'
+                            });
+
+                            graphDefinition.bars.push({
+                                x: option.ordinal,
+                                y: response.sessionResponses,
+                                class: option.css,
+                                tooltip: option.annotation
+                            });
+
+                            if (option.annotation) {
+                                var annotation=document.createElement('span');
+                                annotation.classList.add('annotation');
+                                annotation.innerText=option.annotation;
+                                annotations.appendChild(annotation);
+                            }
+
+                        }
+                        div.appendChild(graphObject(graphDefinition));
+                        if (annotations.childNodes.length>0) {
+                            div.appendChild(annotations);
+                        }
+
+                    }
+
+                    if (responseCollection.textAnswers) {
+                        hasResponses=true;
+
+                        for (textAnswer of responseCollection.textAnswers) {
+                            var textResponse=document.createElement('div');
+                            textResponse.classList.add('text-response');
+                            textResponse.innerText=textAnswer.text;
+                            div.appendChild(textResponse);
+                        }
+                    }
+
+                    if (div.childNodes.length>0) {
+                        document.body.appendChild(div);
+                    }
+                }
+
+                if (!hasResponses) {
+                    var div=document.createElement('div');
+                    div.classList.add('report');
+                    div.innerText='No responses';
+                    document.body.appendChild(div);
+                }
+            }
+
+        }
+    }
+
+    xhr.send('eventId='+encodeURIComponent(document.location.pathname.split('/')[2])+'&'+
+             'presenterSecret='+encodeURIComponent(document.location.pathname.split('/')[3]));
+
+}
 
 
 
@@ -293,6 +471,68 @@
 
                     document.body.appendChild(div);
                 });
+
+                loadAdminSpeakers(eventSecret);
+
+            } else {
+                showStatus('But there was a problem.', 'bad');
+            }
+        }
+
+        xhr.send('eventSecret='+encodeURIComponent(eventSecret));
+    }
+
+
+    function loadAdminSpeakers(eventSecret) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/get-admin-presenters');
+        xhr.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+
+        xhr.onload = function() {
+            if (xhr.status==200) {
+                var blob;
+                try {
+                    blob=JSON.parse(xhr.response);
+                    showStatus('Authenticated.', 'good');
+                } catch(e) {
+                    showStatus('That doesn\'t look right.', 'bad');
+                    return;
+                }
+
+                var div=document.createElement('div');
+                div.classList.add('header');
+
+                // Header
+                var span=document.createElement('span');
+                span.classList.add('title');
+                span.innerText='Speaker report URLs';
+                div.appendChild(span);
+
+                for (speaker of blob) {
+                    // And one item for each speaker
+                    var p=document.createElement('p');
+
+                    var span=document.createElement('span');
+                    span.innerText=speaker.name+': ';
+                    p.appendChild(span);
+
+                    var a=document.createElement('a');
+                    a.innerText=document.location.protocol.replace(':', '')+'://'+document.location.host+'/presenter-report/'+speaker.eventId+'/'+speaker.presenterSecret;
+                    a.href=document.location.protocol.replace(':', '')+'://'+document.location.host+'/presenter-report/'+speaker.eventId+'/'+speaker.presenterSecret;
+                    a.target='_new';
+                    a.addEventListener('click', copyItemToClipboard);
+                    p.appendChild(a);
+
+                    div.appendChild(p);
+                }
+
+                document.body.appendChild(div);
+
+
+
+
+
+
 
             } else {
                 showStatus('But there was a problem.', 'bad');

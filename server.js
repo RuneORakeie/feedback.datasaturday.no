@@ -248,6 +248,21 @@ app.post('/api/sessions', async function (req, res, next) {
 
 
 /*-----------------------------------------------------------------------------
+  Presenter feedback report.
+
+  Users arrive here using link that contains the event id and presenter secret.
+  ---------------------------------------------------------------------------*/
+
+  
+app.get('/presenter-report/:eventId/:presenterSecret', sendTemplate);
+
+
+
+
+
+
+
+/*-----------------------------------------------------------------------------
   The admin page
 
   Lists all sessions for an event, with the QR code, speaker name, session
@@ -263,6 +278,19 @@ app.post('/api/get-admin-sessions', async function (req, res, next) {
     var blob;
     try {
         blob=await adminEventInfo(eventSecret);
+        res.status(200).send(blob);
+    } catch(e) {
+        res.status(401).send();
+    }
+
+});
+
+app.post('/api/get-admin-presenters', async function (req, res, next) {
+
+    var eventSecret=req.body.eventSecret.trim();
+    var blob;
+    try {
+        blob=await adminEventPresenters(eventSecret);
         res.status(200).send(blob);
     } catch(e) {
         res.status(401).send();
@@ -553,6 +581,29 @@ app.get('/api/report/:eventsecret', async function(req, res, next) {
 
 
 /*-----------------------------------------------------------------------------
+  Generate the presenter report
+  ---------------------------------------------------------------------------*/
+
+app.post('/api/presenter-report', async function(req, res, next) {
+    httpHeaders(res);
+
+    try {
+        const report=await getPresenterReport(req.body.eventId, req.body.presenterSecret);
+        res.status(200).send(report);
+    } catch(e) {
+        console.log(e);
+        res.status(401).send();
+    }
+
+});
+
+
+
+
+
+
+
+/*-----------------------------------------------------------------------------
   Other related assets, like images, CSS or other files.
 
   They should all be in the "assets" folder, in order to prevent a malicious
@@ -584,7 +635,7 @@ function httpHeaders(res) {
 
     // Limits use of external script/css/image resources
     if (app.settings.env!='development') {
-        res.header('Content-Security-Policy', "default-src 'self'; style-src 'self' fonts.googleapis.com; script-src 'self'; font-src fonts.gstatic.com");
+        res.header('Content-Security-Policy', "default-src 'self'; style-src 'self' fonts.googleapis.com; script-src 'self' https://static.cloudflareinsights.com; font-src fonts.gstatic.com");
     }
 
     // Don't allow this site to be embedded in a frame; helps mitigate clickjacking attacks
@@ -792,12 +843,47 @@ async function adminEventInfo(eventSecret) {
         });
 }
 
+async function adminEventPresenters(eventSecret) {
+
+    return new Promise((resolve, reject) => {
+        cannedSql.sqlQuery(connectionString,
+            'EXECUTE Feedback.Admin_Event_Presenters @Event_secret=@eventSecret;',
+            [ { "name": 'eventSecret', "type": cannedSql.Types.UniqueIdentifier, "value": eventSecret } ],
+            function(recordset) {
+                try {
+                    var blob = JSON.parse(recordset.data[0].Presenter_blob);
+                    resolve(blob);
+                } catch(e) {
+                    reject();
+                }
+            });
+        });
+}
+
 async function getReport(eventSecret) {
 
     return new Promise((resolve, reject) => {
         cannedSql.sqlQuery(connectionString,
             'EXECUTE Feedback.Get_Event_Report @Event_secret=@eventSecret;',
             [   { "name": 'eventSecret', "type": cannedSql.Types.UniqueIdentifier, "value": eventSecret }],
+            function(recordset) {
+                try {
+                    var blob = JSON.parse(recordset.data[0].Report_blob);
+                    resolve(blob);
+                } catch(e) {
+                    reject();
+                }
+            });
+        });
+}
+
+async function getPresenterReport(eventId, presenterSecret) {
+
+    return new Promise((resolve, reject) => {
+        cannedSql.sqlQuery(connectionString,
+            'EXECUTE Feedback.Get_Presenter_Report @Event_ID=@Event_ID, @Presenter_secret=@Presenter_secret;',
+            [   { "name": 'Event_ID',         "type": cannedSql.Types.Int, "value": eventId },
+                { "name": 'Presenter_secret', "type": cannedSql.Types.UniqueIdentifier, "value": presenterSecret }],
             function(recordset) {
                 try {
                     var blob = JSON.parse(recordset.data[0].Report_blob);

@@ -31,11 +31,11 @@ BEGIN TRANSACTION;
     --- 5.
     INSERT INTO @id (ID) EXECUTE Feedback.Create_Question @Event_ID=@Template_ID, @Question=N'Speaker''s knowledge', @Optimal_percent=100, @Description='in relation to the presentation', @Is_required=0, @Has_plaintext=0, @Display_order=5, @Type='radio';
     --- 6.
-    INSERT INTO @id (ID) EXECUTE Feedback.Create_Question @Event_ID=@Template_ID, @Question=N'Did you learn something?', @Optimal_percent=100, @Is_required=0, @Has_plaintext=0, @Display_order=6, @Type='radio';
+    INSERT INTO @id (ID) EXECUTE Feedback.Create_Question @Event_ID=@Template_ID, @Question=N'Did you learn something?', @Description=N'What were your key takeaways from the session?', @Optimal_percent=100, @Is_required=0, @Has_plaintext=1, @Display_order=6, @Type='radio';
     --- 7.
-    INSERT INTO @id (ID) EXECUTE Feedback.Create_Question @Event_ID=@Template_ID, @Question=N'How was the difficulty?', @Optimal_percent=0, @Description='in relation to the session abstract', @Is_required=0, @Has_plaintext=0, @Display_order=7, @Type='radio';
+    INSERT INTO @id (ID) EXECUTE Feedback.Create_Question @Event_ID=@Template_ID, @Question=N'How was the difficulty?', @Optimal_percent=100, @Description='in relation to the session abstract', @Is_required=0, @Has_plaintext=0, @Display_order=7, @Type='radio';
     --- 8.
-    INSERT INTO @id (ID) EXECUTE Feedback.Create_Question @Event_ID=@Template_ID, @Question=N'What about the tempo?', @Optimal_percent=0, @Is_required=0, @Has_plaintext=0, @Display_order=8, @Type='radio';
+    INSERT INTO @id (ID) EXECUTE Feedback.Create_Question @Event_ID=@Template_ID, @Question=N'What about the tempo?', @Optimal_percent=100, @Is_required=0, @Has_plaintext=0, @Display_order=8, @Type='radio';
     --- 9.
     INSERT INTO @id (ID) EXECUTE Feedback.Create_Question @Event_ID=@Template_ID, @Question=N'Was the presenter engaging?', @Optimal_percent=100, @Is_required=0, @Has_plaintext=0, @Display_order=9, @Type='radio';
     --- 10.
@@ -99,21 +99,21 @@ BEGIN TRANSACTION;
 
     --- Answers to 7.
     SELECT @Question_ID=ID FROM @id WHERE Seq=7;
-    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=1, @Percent_value=-100, @CSS_classes=N'bad', @Annotation=N'Too easy';
-    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=2, @Percent_value=-60, @CSS_classes=N'avg';
-    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=3, @Percent_value=-20, @CSS_classes=N'good';
-    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=4, @Percent_value=20, @CSS_classes=N'good', @Annotation=N'Good';
+    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=1, @Percent_value=20, @CSS_classes=N'bad', @Annotation=N'Too easy';
+    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=2, @Percent_value=60, @CSS_classes=N'avg';
+    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=3, @Percent_value=100, @CSS_classes=N'good';
+    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=4, @Percent_value=100, @CSS_classes=N'good', @Annotation=N'Good';
     EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=5, @Percent_value=60, @CSS_classes=N'avg';
-    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=6, @Percent_value=100, @CSS_classes=N'bad', @Annotation=N'Too hard';
+    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=6, @Percent_value=20, @CSS_classes=N'bad', @Annotation=N'Too hard';
 
     --- Answers to 8.
     SELECT @Question_ID=ID FROM @id WHERE Seq=8;
-    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=1, @Percent_value=-100, @CSS_classes=N'bad', @Annotation=N'Too slow';
-    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=2, @Percent_value=-60, @CSS_classes=N'avg';
-    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=3, @Percent_value=-20, @CSS_classes=N'good';
-    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=4, @Percent_value=20, @CSS_classes=N'good', @Annotation=N'Good';
+    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=1, @Percent_value=20, @CSS_classes=N'bad', @Annotation=N'Too slow';
+    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=2, @Percent_value=60, @CSS_classes=N'avg';
+    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=3, @Percent_value=90, @CSS_classes=N'good';
+    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=4, @Percent_value=100, @CSS_classes=N'good', @Annotation=N'Good';
     EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=5, @Percent_value=60, @CSS_classes=N'avg';
-    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=6, @Percent_value=100, @CSS_classes=N'bad', @Annotation=N'Too fast';
+    EXECUTE Feedback.Create_Answer_option @Question_ID=@Question_ID, @Answer_ordinal=6, @Percent_value=20, @CSS_classes=N'bad', @Annotation=N'Too fast';
 
     --- Answers to 9.
     SELECT @Question_ID=ID FROM @id WHERE Seq=9;
