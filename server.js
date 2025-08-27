@@ -108,6 +108,18 @@ app.listen(serverPort, () => console.log('READY.'));
 
 
 /*-----------------------------------------------------------------------------
+  Azure Linux App Service Plan health check request:
+  ---------------------------------------------------------------------------*/
+
+app.get('/robots933456.txt', function (req, res, next) {
+    console.log("Azure health check: OK.");
+    res.status(200).send("OK");
+});
+
+
+
+
+/*-----------------------------------------------------------------------------
   Serve up the blank template page. "the-business.js" will perform the
   appropriate action on the browser side, depending on the URL.
   ---------------------------------------------------------------------------*/
@@ -155,7 +167,8 @@ app.get('/', function (req, res, next) {
   Evaluate a new session
   ---------------------------------------------------------------------------*/
 
-app.get('/:sessionid([0-9]*)', sendTemplate);
+// GET /123456
+app.get(/^\/(\d+)$/, sendTemplate);
 
 // Get the questions and answer options for a session
 app.get('/api/create-response/:sessionid', async function (req, res, next) {
@@ -199,7 +212,9 @@ app.post('/api/save', async function (req, res, next) {
   Users arrive here when they click the "Done" button on the eval form.
   ---------------------------------------------------------------------------*/
 
-app.get('/event/:eventId([0-9]*)', sendTemplate);
+// GET /event/123456
+app.get(/^\/event\/(\d+)$/, sendTemplate);
+
 app.get('/sessions', sendTemplate);
 
 app.post('/api/sessions', async function (req, res, next) {
@@ -253,7 +268,6 @@ app.post('/api/sessions', async function (req, res, next) {
   Users arrive here using link that contains the event id and presenter secret.
   ---------------------------------------------------------------------------*/
 
-  
 app.get('/presenter-report/:eventId/:presenterSecret', sendTemplate);
 
 
@@ -309,13 +323,14 @@ app.post('/api/get-admin-presenters', async function (req, res, next) {
   ---------------------------------------------------------------------------*/
 
 // Send the QR code for this session 
-app.get('/qr/:sessionid([0-9]*)', async function (req, res, next) {
+// GET /qr/123456
+app.get(/^\/qr\/(\d+)$/, async function (req, res, next) {
 
     const dir=__dirname+'/qr';
     if (!fs.existsSync(dir)) { fs.mkdirSync(dir); }
 
-    const file=dir+'/'+req.params.sessionid+'.png';
-    const url='https://'+req.headers.host+'/'+req.params.sessionid;
+    const file=dir+'/'+req.params[0]+'.png';
+    const url='https://'+req.headers.host+'/'+req.params[0];
 
     // Create the PNG file:
     if (!fs.existsSync(file)) {
@@ -327,7 +342,7 @@ app.get('/qr/:sessionid([0-9]*)', async function (req, res, next) {
     }
 
     // ... and return it to the client:
-    res.sendFile('/qr/'+req.params.sessionid+'.png', sendFileOptions('/', 60 * 60 * 1000), function(err) {
+    res.sendFile('/qr/'+req.params[0]+'.png', sendFileOptions('/', 60 * 60 * 1000), function(err) {
         if (err) {
             res.sendStatus(404);
             return;
@@ -335,14 +350,15 @@ app.get('/qr/:sessionid([0-9]*)', async function (req, res, next) {
     });
 });
 
-// Send the QR code for this event 
-app.get('/qr/event/:eventid([0-9]*)', async function (req, res, next) {
+// Send the QR code for this event
+// GET /qr/event/123456
+app.get(/^\/qr\/event\/(\d+)$/, async function (req, res, next) {
 
     const dir=__dirname+'/qr';
     if (!fs.existsSync(dir)) { fs.mkdirSync(dir); }
 
-    const file=dir+'/event-'+req.params.eventid+'.png';
-    const url='https://'+req.headers.host+'/event/'+req.params.eventid;
+    const file=dir+'/event-'+req.params[0]+'.png';
+    const url='https://'+req.headers.host+'/event/'+req.params[0];
 
     // Create the PNG file:
     if (!fs.existsSync(file)) {
@@ -354,7 +370,7 @@ app.get('/qr/event/:eventid([0-9]*)', async function (req, res, next) {
     }
 
     // ... and return it to the client:
-    res.sendFile('/qr/event-'+req.params.eventid+'.png', sendFileOptions('/', 60 * 60 * 1000), function(err) {
+    res.sendFile('/qr/event-'+req.params[0]+'.png', sendFileOptions('/', 60 * 60 * 1000), function(err) {
         if (err) {
             res.sendStatus(404);
             return;
